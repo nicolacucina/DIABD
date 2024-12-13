@@ -41,3 +41,4 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 - Link Prediction Survey : https://link.springer.com/article/10.1007/s11227-023-05591-8
 - Link Prediction: https://github.com/Cloudy1225/Awesome-Link-Prediction
 - Link Prediction for PageRank Fairness: https://github.com/ksemer/fairPRrec
+- Matrix Completion for Recommended Systems: https://chenzl23.github.io/assets/pdf/ReviewOnRS-KAIS2022.pdf
