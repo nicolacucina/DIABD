@@ -13,6 +13,7 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 
 - - PageRank-based Filtering
 - - - https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf
+- - - https://github.com/pranay-ar/PageRank-Recommendation-System/blob/main/src/main/scala/MovieLensPageRank.scala
 - Content-based Filtering
 - - Item-based Filtering
 - - User-based Filtering
