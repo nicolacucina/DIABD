@@ -11,10 +11,11 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 - - - https://github.com/alicefortuni/MovieRecommenderVis/tree/master
 - - - Netflix Prize Solution : https://pantelis.github.io/cs301/docs/common/lectures/recommenders/netflix/
 - - - https://builtin.com/articles/svd-algorithm
+- - - https://github.com/adinmg/movie_recommender_system  ---> forse molto utile per svd, collaborative filtering e vector based
 
 - - PageRank-based Filtering
 - - - https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf
-
+- - - https://github.com/pranay-ar/PageRank-Recommendation-System/blob/main/src/main/scala/MovieLensPageRank.scala
 - Content-based Filtering
 
 - - Item-based Filtering
@@ -46,3 +47,4 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 - Link Prediction Survey : https://link.springer.com/article/10.1007/s11227-023-05591-8
 - Link Prediction: https://github.com/Cloudy1225/Awesome-Link-Prediction
 - Link Prediction for PageRank Fairness: https://github.com/ksemer/fairPRrec
+- Matrix Completion for Recommended Systems: https://chenzl23.github.io/assets/pdf/ReviewOnRS-KAIS2022.pdf
