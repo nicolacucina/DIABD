@@ -6,6 +6,7 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 ### Filtering
 
 - Collaborative Filtering
+
 - - SVD / ALS / Matrix Factorization (forse Collaborative Filtering da quello che leggo ma guardare meglio i calcoli)
 - - - https://github.com/alicefortuni/MovieRecommenderVis/tree/master
 - - - Netflix Prize Solution : https://pantelis.github.io/cs301/docs/common/lectures/recommenders/netflix/
@@ -13,9 +14,13 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 
 - - PageRank-based Filtering
 - - - https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf
+
 - Content-based Filtering
+
 - - Item-based Filtering
-- - User-based Filtering
+- - - Serve il calcolo della similarità tra gli item(movies), se non è presente nel dataset facciamo SVD?
+- - - https://www.stratascratch.com/blog/step-by-step-guide-to-building-content-based-filtering/
+- - - https://www.scaler.com/topics/machine-learning/content-based-filtering/
 
 - Hybrid Filtering
 
