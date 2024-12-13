@@ -10,6 +10,7 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 - - - https://github.com/alicefortuni/MovieRecommenderVis/tree/master
 - - - Netflix Prize Solution : https://pantelis.github.io/cs301/docs/common/lectures/recommenders/netflix/
 - - - https://builtin.com/articles/svd-algorithm
+- - - https://github.com/adinmg/movie_recommender_system  ---> forse molto utile per svd, collaborative filtering e vector based
 
 - - PageRank-based Filtering
 - - - https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf
