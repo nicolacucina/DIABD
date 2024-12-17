@@ -16,7 +16,9 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 - - PageRank-based Filtering
 - - - https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf
 - - - https://github.com/pranay-ar/PageRank-Recommendation-System/blob/main/src/main/scala/MovieLensPageRank.scala
+
 - Content-based Filtering
+- - - https://github.com/DATUMBRIGHT/content-based-movie-recommendation-system (sembra complesso ma completo come sistema di raccomandazione)
 
 - - Item-based Filtering
 - - - Serve il calcolo della similarità tra gli item(movies), se non è presente nel dataset facciamo SVD?
@@ -24,6 +26,10 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 - - - https://www.scaler.com/topics/machine-learning/content-based-filtering/
 
 - Hybrid Filtering
+
+- Vector-Based Recommendation Systems: 
+- - - https://www.e2enetworks.com/blog/how-to-create-a-vector-based-recommendation-system
+- - - https://towardsdatascience.com/how-to-create-a-vector-based-movie-recommendation-system-b6d4f7582d66 con repo github: https://github.com/arditobryan/Projects/tree/master/20211126_movie_plot_transformers
 
 - K-means-based Filtering
 
