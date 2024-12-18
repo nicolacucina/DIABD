@@ -8,6 +8,7 @@ Java SE Development Kit 8u351 https://www.oracle.com/java/technologies/javase/ja
 HADOOP: hadoop-3.2.4 https://hadoop.apache.org/release/3.2.4.html
 SPARK: spark-3.5.3-bin-hadoop3 https://spark.apache.org/downloads.html
 
+The Java installer will install the jdk in C:\Program Files\Java\jdk1.8.0_351 automatically, while the JRE destination can be changed. The Hadoop and Spark files can be extracted to any folder, but it is recommended to extract them to the root of the disk to avoid long paths.
 
 ### Folder Structure
 
