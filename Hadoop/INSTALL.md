@@ -4,8 +4,10 @@
 
 JAVA: 
 Java SE Development Kit 8u351 https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html
-- Windows x64 Installer https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html#license-lightbox
+- Windows x64 Installer jdk-8u351-windows-x64.exe https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html#license-lightbox
+
 HADOOP: hadoop-3.2.4 https://hadoop.apache.org/release/3.2.4.html
+
 SPARK: spark-3.5.3-bin-hadoop3 https://spark.apache.org/downloads.html
 
 The Java installer will install the jdk in C:\Program Files\Java\jdk1.8.0_351 automatically, while the JRE destination can be changed. The Hadoop and Spark files can be extracted to any folder, but it is recommended to extract them to the root of the disk to avoid long paths.
@@ -181,19 +183,30 @@ If an error pops up, install msvcr120.dll and msvc-170.dll to Windows\System32
 #### copy yarn timeline files
 
 ```shell
-> cp %HADOOP_HOME%\share\hadoop\yarn\timelineservice\*.jar %HADOOP_HOME%\share\hadoop\yarn\
+cp %HADOOP_HOME%\share\hadoop\yarn\timelineservice\*.jar %HADOOP_HOME%\share\hadoop\yarn\
 ```
 
 #### Boot HDFS
 
 ```shell
-> start-dfs.cmd
+start-dfs.cmd
 ```
 The HDFS should be running on http://localhost:9870
 
 #### Boot YARN
 
 ```shell
-> start-yarn.cmd
+start-yarn.cmd
 ```
 The YARN should be running on http://localhost:8088
+
+#### Test HDFS
+
+```shell
+hdfs dfs -mkdir /test
+hadoop dfs -put ml-latest-small\ratings.csv \test\
+hadoop dfs -put ml-latest-small\movies.csv \test\
+hdfs dfs -ls /
+```
+hadoop dfs -put ml-latest-small\ratings.csv \test\
+hadoop dfs -put ml-latest-small\movies.csv \test\
