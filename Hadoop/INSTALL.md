@@ -208,5 +208,3 @@ hadoop dfs -put ml-latest-small\ratings.csv \test\
 hadoop dfs -put ml-latest-small\movies.csv \test\
 hdfs dfs -ls /
 ```
-hadoop dfs -put ml-latest-small\ratings.csv \test\
-hadoop dfs -put ml-latest-small\movies.csv \test\
