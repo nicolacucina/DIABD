@@ -17,6 +17,9 @@ MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/
 - - - https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf
 - - - https://github.com/pranay-ar/PageRank-Recommendation-System/blob/main/src/main/scala/MovieLensPageRank.scala
 
+- - Link-Prediction Filtering
+nel senso che si cerca di prevedere la probabilità di una relazione tra due nodi, per noi questa relazione è la valutazione di un film da parte di un utente, quindi se uso svd per prevedere la valutazione di un film da parte di un utente, posso usare link-prediction per fare la stessa cosa e confronto
+
 - Content-based Filtering
 - - - https://github.com/DATUMBRIGHT/content-based-movie-recommendation-system (sembra complesso ma completo come sistema di raccomandazione)
 
