@@ -183,7 +183,7 @@ If an error pops up, install msvcr120.dll and msvc-170.dll to Windows\System32
 #### copy yarn timeline files
 
 ```shell
-cp %HADOOP_HOME%\share\hadoop\yarn\timelineservice\*.jar %HADOOP_HOME%\share\hadoop\yarn\
+copy %HADOOP_HOME%\share\hadoop\yarn\timelineservice\*.jar %HADOOP_HOME%\share\hadoop\yarn\
 ```
 
 #### Boot HDFS
@@ -192,6 +192,15 @@ cp %HADOOP_HOME%\share\hadoop\yarn\timelineservice\*.jar %HADOOP_HOME%\share\had
 start-dfs.cmd
 ```
 The HDFS should be running on http://localhost:9870
+If you have problems with an occupied port: 
+```shell
+netstat -ano | findstr :9000
+```
+Then identify the process which is using that door, and put his PID here:
+```shell
+tasklist | findstr 1234
+```
+And retry the command above to start hdfs.
 
 #### Boot YARN
 
