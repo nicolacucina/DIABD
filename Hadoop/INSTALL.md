@@ -198,7 +198,7 @@ netstat -ano | findstr :9000
 ```
 Then identify the process which is using that door, and put his PID here:
 ```shell
-tasklist | findstr 1234
+taskkill /PID 8656 /F
 ```
 And retry the command above to start hdfs.
 
