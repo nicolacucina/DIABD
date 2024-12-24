@@ -145,6 +145,12 @@ Inside the folder %HADOOP_HOME%\etc\hadoop change the following files:
 > mkdir %HADOOP_HOME%\data\datanode
 ```
 
+#### Format HDFS
+
+```shell
+> hdfs namenode -format
+```
+
 #### Test Hadoop
 
 ```shell
