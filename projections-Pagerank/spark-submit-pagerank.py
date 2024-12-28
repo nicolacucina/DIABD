@@ -1,5 +1,5 @@
 # https://stackoverflow.com/questions/68246173/python-was-not-found-but-can-be-installed-when-using-spark-submit-on-windows
-# spark-submit --name "test" --master local[1] --conf spark.driver.memory=4g projections-Pagerank\spark-submit-pagerank.py
+# spark-submit --name "test" --master local[1] --conf spark.driver.memory=4g DIABD\projections-Pagerank\spark-submit-pagerank.py
 
 # pip install findspark
 import findspark
@@ -10,9 +10,11 @@ from pyspark.sql import SparkSession
 
 spark = SparkSession.builder \
         .appName("Spark basic example") \
-        .config("spark.driver.memory", "4g") \
-        .config("spark.executor.memory", "4g") \
+        .master("spark://192.168.68.101:7077") \
+        .config("spark.hadoop.fs.DefaultFS, hdfs://localhost:50054") \
         .getOrCreate()
+        # .config("spark.driver.memory", "4g") \
+        # .config("spark.executor.memory", "4g") \
         # .set("spark.dynamicAllocation.enabled", "true")
         # .set("spark.executor.memoryOverhead", "1g")
 
@@ -21,9 +23,9 @@ sqlContext = SQLContext(spark)
 
 spark.sparkContext._conf.getAll()  # check the config
 
-ratings = spark.read.csv('hdfs://localhost:9001/test/ratings.csv', header=True, inferSchema=True)
+ratings = spark.read.csv('hdfs://localhost:50054/test/ratings.csv', header=True, inferSchema=True)
 
-movies = spark.read.csv('hdfs://localhost:9001/test/movies.csv', header=True, inferSchema=True)
+movies = spark.read.csv('hdfs://localhost:50054/test/movies.csv', header=True, inferSchema=True)
 
 user_movie_matrix = ratings.join(movies, on="movieId", how="inner")
 
