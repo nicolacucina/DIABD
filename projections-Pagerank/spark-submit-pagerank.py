@@ -1,5 +1,5 @@
 # https://stackoverflow.com/questions/68246173/python-was-not-found-but-can-be-installed-when-using-spark-submit-on-windows
-
+# spark-submit --name "test" --master local[1] --conf spark.driver.memory=4g DIABD\projections-Pagerank\spark-submit-pagerank.py
 
 # pip install findspark
 import findspark
@@ -10,17 +10,22 @@ from pyspark.sql import SparkSession
 
 spark = SparkSession.builder \
         .appName("Spark basic example") \
-        .config("spark.driver.memory", "6g") \
+        .master("spark://192.168.68.101:7077") \
+        .config("spark.hadoop.fs.DefaultFS, hdfs://localhost:50054") \
         .getOrCreate()
+        # .config("spark.driver.memory", "4g") \
+        # .config("spark.executor.memory", "4g") \
+        # .set("spark.dynamicAllocation.enabled", "true")
+        # .set("spark.executor.memoryOverhead", "1g")
 
 from pyspark.sql import SQLContext
 sqlContext = SQLContext(spark)
 
 spark.sparkContext._conf.getAll()  # check the config
 
-ratings = spark.read.csv('hdfs://localhost:9001/test/ratings.csv', header=True, inferSchema=True)
+ratings = spark.read.csv('hdfs://localhost:50054/test/ratings.csv', header=True, inferSchema=True)
 
-movies = spark.read.csv('hdfs://localhost:9001/test/movies.csv', header=True, inferSchema=True)
+movies = spark.read.csv('hdfs://localhost:50054/test/movies.csv', header=True, inferSchema=True)
 
 user_movie_matrix = ratings.join(movies, on="movieId", how="inner")
 
@@ -66,28 +71,13 @@ vertices = user_vertices.union(movie_vertices)
 from graphframes import GraphFrame
 
 user_movie_graph = GraphFrame(vertices, edges)
+# input("user_movie graph created")
 
 # Debug: Check the graph construction
 print("First 10 nodes in the graph:")
 user_movie_graph.vertices.show(10, truncate=False)
 print("First 10 edges in the graph:")
 user_movie_graph.edges.show(10, truncate=False)
-
-# user_user_edges = user_movie_graph.edges.alias("e1") \
-#     .join(user_movie_graph.edges.alias("e2"), col("e1.dst") == col("e2.dst")) \
-#     .select(
-#         col("e1.src").alias("src"),
-#         col("e2.src").alias("dst"),
-#         (col("e1.weight") + col("e2.weight")).alias("weight")
-#     ).filter(col("src") != col("dst"))
-
-# user_user_graph = GraphFrame(user_movie_graph.vertices, user_user_edges)
-
-# # Debug: Check the graph construction
-# print("First 10 nodes in the graph:")
-# user_user_graph.vertices.show(10, truncate=False)
-# print("First 10 edges in the graph:")
-# user_user_graph.edges.show(10, truncate=False)
 
 # Project movie-movie graph
 movie_movie_edges = user_movie_graph.edges.alias("e1") \
@@ -99,6 +89,7 @@ movie_movie_edges = user_movie_graph.edges.alias("e1") \
     ).filter(col("src") != col("dst"))
 
 movie_movie_graph = GraphFrame(user_movie_graph.vertices, movie_movie_edges)
+# input("movie_movie graph created")
 
 # Debug: Check the graph construction
 print("First 10 nodes in the graph:")
@@ -133,8 +124,5 @@ def predict_user(user_id, user_movie_graph, movie_movie_graph):
     return recommendations
 
 user = "10"
-try: 
-    s_t = predict_user(user, user_movie_graph, movie_movie_graph)
-    print(f"Predicted movies for user {user}: {s_t[:10]}")
-except Exception as e:
-    print(f"Error: {e}")
+s_t = predict_user(user, user_movie_graph, movie_movie_graph)
+print(f"Predicted movies for user {user}: {s_t[:10]}")
