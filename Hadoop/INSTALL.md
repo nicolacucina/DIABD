@@ -219,7 +219,8 @@ The YARN should be running on http://localhost:8088
 
 ```shell
 hdfs dfs -mkdir /test
-hadoop dfs -put ml-latest-small\ratings.csv \test\
-hadoop dfs -put ml-latest-small\movies.csv \test\
+# Forse servono sempre permessi da amministratore per il terminale che si usa
+hdfs dfs -put C:\Users\Bans\Desktop\DIABD\DIABD\ml-latest\ratings.csv /test/ratingsBig.csv
+hdfs dfs -put C:\Users\Bans\Desktop\DIABD\DIABD\ml-latest\movies.csv /test/moviesBig.csv
 hdfs dfs -ls /
 ```
