@@ -1,5 +1,7 @@
 # Movie Recommendation System
 
+![Testo Alternativo](images/movie_rec_intro.jpg)
+
 ## Introduzione
 Lo scopo di questo progetto è sviluppare un sistema di raccomandazione di film che offra suggerimenti personalizzati agli utenti, basandosi sulle loro preferenze riguardanti i film che hanno già visto e valutato.
 
@@ -103,13 +105,13 @@ Utilizzato per misurare l'importanza relativa dei nodi all'interno di un grafo b
   $p_{i} = \frac{1-d}{n} + d \sum_{j \rightarrow i} \frac{p_{j}}{m_{j}}
   $
 
-  Dove:  
-  - $d$ è il **fattore di damping**, con $0 < d < 1$, usato per gestire salti casuali;  
-  - $n$ è il numero totale di nodi nel grafo;  
-  - $L_{ij}$ rappresenta la connessione tra i nodi $i$ e $j$;  
-  - $m_{j}$ è il numero di connessioni totali del nodo $j$.  
+    Dove:  
+    - $d$ è il **fattore di damping**, con $0 < d < 1$, usato per gestire salti casuali;  
+    - $n$ è il numero totale di nodi nel grafo;  
+    - $L_{ij}$ rappresenta la connessione tra i nodi $i$ e $j$;  
+    - $m_{j}$ è il numero di connessioni totali del nodo $j$.  
 
-  Questo approccio consente di rappresentare anche il fatto che un utente  occasionalmente esplora film al di fuori delle proprie preferenze usuali.  
+    Questo approccio consente di rappresentare anche il fatto che un utente  occasionalmente esplora film al di fuori delle proprie preferenze usuali.  
   I dettagli completi del calcolo e dell'implementazione verranno discussi nel notebook dedicato. 
   
   - **Complessità**:  
