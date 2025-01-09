@@ -275,7 +275,7 @@ start-yarn.sh
 ```
 
 A questo punto il servizio è in esecuzione presso: 
-- YARN Resource Manager: `http://localhost:8088`
+- YARN Resource Manager: `http://master:8088`
 - Hadoop Namenode: `http://localhost:9870`
 
 **8. Inserire memorizzare il dataset in HDFS**
@@ -359,7 +359,7 @@ nel senso che si cerca di prevedere la probabilità di una relazione tra due nod
 
 - K-means-based Filtering
 
-### Ranking
+### Popular Ranking techniques
 
 - Popularity-based Ranking
 - KNN-based Ranking
