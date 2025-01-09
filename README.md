@@ -10,7 +10,7 @@ Per raggiungere tale obiettivo sono state integrate diverse tecnologie:
 - **Neo4j** viene impiegato per rappresentare e analizzare le relazioni tra utenti e film, essendo particolarmente adatto a gestire i grafi. <!--Da riscrivere meglio after Neo4j-->
 
 
-## Dataset 
+## Datasets 
 
 Inizialmente, l'intento era quello di utilizzare il **Netflix Prize Dataset** (~2 GB), oggetto di una competizione tenutasi su larga scala. Tuttavia, per motivi di praticità e di testing iniziale, si è scelto di adottare il **MovieLens Dataset**, disponibile in due varianti:
 
@@ -45,33 +45,6 @@ Le caratteristiche principali del dataset di Netflix includono:
 - Un totale di 480.189 utenti attivi.  
 
 Grazie all'operazione di *pivot* sui dati di MovieLens, è possibile generare una struttura dati analoga, mappando gli utenti e i film secondo una rappresentazione coerente con quella di Netflix, semplificando così le analisi comparative e l'estensione del sistema di raccomandazione.  
-
-
-
-## Setup 
-
-Il sistema viene implementato realizzando un cluster Hadoop con un nodo Master (Namenode) e due nodi Slave (Datanode), connessi tramite rete bridgiata. Il Master agisce anche come Resource Manager, mentre si utilizza HDFS per l'archiviazione distribuita del dataset MovieLens.
-
-L'applicazione inoltre sfrutta YARN per la gestione delle risorse e Spark per l'elaborazione distribuita, integrandosi con Neo4j per le analisi grafiche.
-
-
-
-## Prerequisiti
-In questa sezione sono elencati i prerequisiti software necessari per l'esecuzione del sistema:
-1. **Apache Hadoop 3.2.4**;
-2. **Apache Spark 3.5.4**;
-3. **Java 8**;
-4. **Neo4j 1.6.1**;
-5. **Python Driver for Neo4j**: connettore *neo4j-python*. Installabile attraverso:
-   ```
-   pip install neo4j
-   ```
-6. **Notebook Jupyter**: installabile attraverso:
-   ```
-   pip install notebook
-   ```
-<div style="page-break-before: always;"></div>
-
 
 ## Implementazione
 Sono stati adottati tre approcci principali per il sistema di raccomandazione:
@@ -143,9 +116,188 @@ Il calcolo della decomposizione SVD ha una complessità di $O(m* n \cdot \min(m,
 - **ALS** ha dimostrato di essere scalabile grazie alla sua implementazione iterativa distribuita su Spark, rendendolo adatto anche per il dataset **Big**.  
 - **PageRank** e **SVD**, pur essendo efficaci per dataset più piccoli, hanno fallito su dataset di grandi dimensioni a causa della complessità computazionale e della memoria richiesta. -->
 
-## Configurazione cluster
+## Architettura del sistema
 
+[INSERIRE IMG SCHEMA CLUSTER]
+Il sistema viene implementato realizzando un cluster Hadoop con un nodo Master (Namenode) e due nodi Slave (Datanode), connessi tramite rete bridgiata. Il Master agisce anche come Resource Manager, mentre si utilizza HDFS per l'archiviazione distribuita del dataset MovieLens.
+
+L'applicazione inoltre sfrutta YARN per la gestione delle risorse e Spark per l'elaborazione distribuita, integrandosi con il Graph Database Neo4j per le analisi.
 [TODO]
+
+
+## Prerequisiti
+In questa sezione sono elencati i prerequisiti software necessari per l'esecuzione del sistema:
+1. **Apache Hadoop 3.2.4**; [[hadoop](https://hadoop.apache.org/release/3.2.4.html)]
+2. **Apache Spark 3.5.4** [[spark](https://spark.apache.org/downloads.html)]
+3. **Java 8**;  [[java](https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html)]
+4. **Neo4j 1.6.1**;
+
+Il programma di installazione di Java installerà automaticamente il jdk in C:\Program Files\Java\jdk1.8.0_351, mentre la destinazione JRE può essere modificata. 
+I file di Hadoop e Spark possono essere estratti in qualsiasi cartella, ma si consiglia di estrarli nella root del disco per evitare percorsi lunghi.
+
+
+## Setup/Configurazione del Cluster
+
+**1. Creazione di un Utente Dedicato per Hadoop**
+
+Per motivi di sicurezza, è consigliabile creare un utente separato per Hadoop:
+
+```bash
+sudo usermod -aG sudo master
+```
+
+**2. Comunicazione fra le macchine tramite SSH**
+ 
+
+Hadoop utilizza SSH per la comunicazione tra i nodi. È quindi necessario configurare l'accesso SSH *Passwordless* per l'utente Hadoop. 
+Per semplificare la configurazione, tutti i dispositivi del cluster (nodo master e due nodi worker) utilizzano lo stesso nome utente (`master`), 
+la stessa password e una configurazione condivisa delle chiavi pubbliche.  
+Nonostante ciò, le tre macchine risultano comunque riconoscibili, come risulta nel file `/etc/hosts` presente in tutti i nodi:  
+   ```text
+   <IP_master>    master
+   <IP_worker1>   worker1
+   <IP_worker2>   worker2
+   ```  
+
+Con questa configurazione, Hadoop sarà in grado di comunicare tra i nodi senza richiedere continuamente l'inserimento di password, 
+semplificando l'implementazione e l'esecuzione dei servizi.
+
+**3. Download e Installazione di Hadoop**
+
+- E' necessario scaricare l'ultima versione stabile di Hadoop dal sito ufficiale:
+
+  ```bash
+  wget https://downloads.apache.org/hadoop/common/hadoop-3.2.4/hadoop-3.2.4.tar.gz
+  ```
+
+- Successivamente, estrarre l'archivio e spostare i file:
+
+  ```bash
+  tar -xvzf hadoop-3.2.4.tar.gz
+  mv hadoop-3.2.4 ~/hadoop
+  ```
+
+- Si è creato uno script `custom-env.sh` in cui sono state inserite tutte le variabili d'ambiente utili per Hadoop, Spark e Java.
+[RICONTROLLARE CHE SIA TIPO COSI':]
+  ```bash
+  export HADOOP_HOME=~/hadoop
+  export HADOOP_INSTALL=$HADOOP_HOME
+  export HADOOP_MAPRED_HOME=$HADOOP_HOME
+  export HADOOP_COMMON_HOME=$HADOOP_HOME
+  export HADOOP_HDFS_HOME=$HADOOP_HOME
+  export YARN_HOME=$HADOOP_HOME
+  export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+  export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+  export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
+  ```
+
+
+**4. Configurazione dei File di Hadoop**
+A questo punto per configurare un ambiente Hadoop è sufficiente modificare una serie di file di configurazione:
+- Nel file `hadoop-env.sh` va specificato il percorso di Java:
+
+  ```bash
+  nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+  ```
+
+  Assicurarsi che la riga seguente punti al percorso corretto di Java:
+
+  ```bash
+  export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
+  ```
+
+- Nel file `core-site.xml` aggiungere:
+
+  ```xml
+  <configuration>
+    <property>
+      <name>fs.defaultFS</name>
+      <value>hdfs://localhost:9000</value>
+    </property>
+  </configuration>
+  ```
+
+- Nel file `hdfs-site.xml`:
+
+  ```xml
+  <configuration>
+    <property>
+      <name>dfs.replication</name>
+      <value>1</value>
+    </property>
+    <property>
+      <name>dfs.namenode.name.dir</name>
+      <value>file:///C:/Hadoop/hadoop-3.2.4/data/namenode</value>
+    </property>
+    <property>
+      <name>dfs.datanode.data.dir</name>
+      <value>file:///C:/Hadoop/hadoop-3.2.4/data/datanode</value>
+    </property>
+  </configuration>
+  ```
+
+- Nel file `mapred-site.xml`:
+
+  ```xml
+  <configuration>
+    <property>
+      <name>mapreduce.framework.name</name>
+      <value>yarn</value>
+    </property>
+  </configuration>
+  ```
+
+- Nel file `yarn-site.xml`:
+
+  ```xml
+  <configuration>
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.auxservices.mapreduce.shuffle.class</name>  
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+  </property>
+</configuration>
+  ```
+
+**5. Creazione delle directories**
+A questo punto creare le cartelle `namenode` e `datanode` nella cartella `data`:
+```shell
+> mkdir %HADOOP_HOME%\data\namenode
+> mkdir %HADOOP_HOME%\data\datanode
+```
+
+**6. Formattazione del NameNode**
+
+Prima di avviare Hadoop, è necessario formattare il NameNode:
+
+```bash
+hdfs namenode -format
+```
+
+**7. Avvio del Cluster Hadoop**
+
+A questo punto verificare che l'istallazione sia andata a buon fine:
+```shell
+> hadoop version
+```
+
+E per avviare i servizi Hadoop eseguire:
+```bash
+start-dfs.sh
+start-yarn.sh
+```
+
+A questo punto il servizio è in esecuzione presso: `http://localhost:8088/`
+
+
+
+ 
+
+
+
 
 ## Analisi
 L'analisi è stata condotta sui seguenti parametri:
