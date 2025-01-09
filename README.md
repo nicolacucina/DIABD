@@ -137,7 +137,7 @@ semplificando l'implementazione e l'esecuzione dei servizi.
 - Eseguire lo stesso procedimento per Spark.
 
 - Si è creato uno script `custom-env.sh` in cui sono state inserite tutte le variabili d'ambiente utili per Hadoop, Spark e Java.
-[RICONTROLLARE CHE SIA TIPO COSI':]
+
   ```bash
   #!/bin/sh
 
@@ -289,6 +289,35 @@ hdfs dfs -ls /
 ```
 
 **9. Spark submit**
+
+Il comando `spark-submit` permette di eseguire applicazioni Spark definite in script Python, Java, o Scala. Si possono specificare vari parametri di configurazione come risorse, modalità di esecuzione (cluster, client, ecc.), numero di esecutori e altre impostazioni personalizzate per Spark.
+
+Esempio di esecuzione di un'applicazione Spark in modalità locale:
+```bash
+spark-submit \
+  --master local[*] \
+  --executor-memory 4G \
+  --executor-cores 2 \
+  my_spark_app.py
+```
+
+Ciò non è però strettamente necessario quando si lavora con notebook come Jupyter, dal momento che la Spark Session può essere creata direttamente all'interno del codice, come è stato fatto in questo progetto. 
+Ad esempio:
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName('Movie Recommendation') \
+    .master('yarn') \
+    .config('spark.driver.memory', '4g') \
+    .config('spark.executor.instances', '2') \
+    .config('spark.executor.memory', '3g') \
+    .config("spark.locality.wait.node", "0") \
+    .getOrCreate()
+
+# Verifica configurazioni
+spark.sparkContext.getConf().getAll()
+```
 
 
 
