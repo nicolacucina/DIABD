@@ -12,7 +12,7 @@ Per raggiungere tale obiettivo sono state integrate diverse tecnologie:
 
 ## Datasets 
 
-Inizialmente, l'intento era quello di utilizzare il **Netflix Prize Dataset** (~2 GB), oggetto di una competizione tenutasi su larga scala. Tuttavia, per motivi di praticità e di testing iniziale, si è scelto di adottare il **MovieLens Dataset**, disponibile in due varianti:
+Inizialmente, l'intento era quello di utilizzare il **Netflix Prize Dataset** (~2 GB) [Netflix Dataset](https://www.kaggle.com/datasets/netflix-inc/netflix-prize-data), oggetto di una competizione tenutasi su larga scala. Tuttavia, per motivi di praticità e di testing iniziale, si è scelto di adottare il **MovieLens Dataset**, disponibile in due varianti:
 
 - **Small**: 100.000 valutazioni fatte a 9.000 film da parte di 600 utenti (~1 MB);
 - **Full**: circa 33.000.000 valutazioni fatte a 86.000 film da parte di 330.975 utenti (~28 GB).
@@ -46,83 +46,41 @@ Le caratteristiche principali del dataset di Netflix includono:
 
 Grazie all'operazione di *pivot* sui dati di MovieLens, è possibile generare una struttura dati analoga, mappando gli utenti e i film secondo una rappresentazione coerente con quella di Netflix, semplificando così le analisi comparative e l'estensione del sistema di raccomandazione.  
 
-## Implementazione
+## Implementazione/Approcci utilizzati
 Sono stati adottati tre approcci principali per il sistema di raccomandazione:
 
 1. **Alternating Least Squares (ALS)**  
 ALS è un algoritmo di fattorizzazione delle matrici utilizzato per la raccomandazione collaborativa (*Collaborative Filtering*). 
 La tecnica suddivide la matrice delle valutazioni in due matrici più piccole (utenti e film), riducendo le dimensioni e preservando le relazioni latenti.
    
-  - **Formula**: ALS minimizza la funzione di costo:
-     $$\sum_{(u, i) \in D} (r_{ui} - \mathbf{x}_u^T \mathbf{y}_i)^2 + \lambda (\|\mathbf{x}_u\|^2 + \|\mathbf{y}_i\|^2)$$
-
-     Dove $\mathbf{x}_u$ e $\mathbf{y}_i$ rappresentano i vettori utente e item, $\lambda$ è il termine di regolarizzazione.
-     
-     
-   - **Complessità**:  
-     ALS alterna tra la risoluzione di due problemi di regressione lineare, ciascuno con una complessità di $O(k^2 m + k^3)$, dove:
-     - $k$ è il numero di fattori latenti;
-     - $m$ è il numero di righe nella matrice utente o film.  
-     
-     Grazie all’implementazione distribuita di Spark, ALS è risultato scalabile anche con il dataset **Big**, completando l'addestramento in tempi ragionevoli.
-
 2. **PageRank**  
 Utilizzato per misurare l'importanza relativa dei nodi all'interno di un grafo bipartito (utenti-film). Dopo la conversione dei dati in grafi con la libreria *GraphFrames*:
    - Gli archi rappresentano le valutazioni (con peso derivato dal rating).
    - PageRank classifica film e utenti in base alla loro influenza. <!--NON CREDO SIA PROPRIO VERO, RIVEDI A MENTE LUCIDA--> 
 
-    Il metodo si basa su un modello iterativo che tiene conto delle connessioni tra i nodi. 
-
-  - **Formula**:  
-  $p_{i} = \frac{1-d}{n} + d \sum_{j \rightarrow i} \frac{p_{j}}{m_{j}}
-  $
-
-    Dove:  
-    - $d$ è il **fattore di damping**, con $0 < d < 1$, usato per gestire salti casuali;  
-    - $n$ è il numero totale di nodi nel grafo;  
-    - $L_{ij}$ rappresenta la connessione tra i nodi $i$ e $j$;  
-    - $m_{j}$ è il numero di connessioni totali del nodo $j$.  
-
+    Il metodo si basa su un modello iterativo che tiene conto delle connessioni tra i nodi.
     Questo approccio consente di rappresentare anche il fatto che un utente  occasionalmente esplora film al di fuori delle proprie preferenze usuali.  
-  I dettagli completi del calcolo e dell'implementazione verranno discussi nel notebook dedicato. 
-  
-  - **Complessità**:  
-      L'algoritmo iterativo di PageRank ha una complessità di $O(E + V)$ per iterazione, dove:
-      - $E$ è il numero di archi (valutazioni);
-      - $V$ è il numero di nodi (utenti e film).  
-      Tuttavia, il numero di iterazioni richiesto per la convergenza può aumentare significativamente in grafi molto grandi, rendendo l'approccio non praticabile con il dataset **Big**.
 
 
 
 3. **SVD (Singular Value Decomposition)**    
 SVD scompone la matrice delle valutazioni per estrarre feature latenti che rappresentano correlazioni tra utenti e film.  
-- **Formula**:  
-La decomposizione si basa sulla rappresentazione della matrice \(R\) come prodotto di tre matrici:
-     $R = U \Sigma V^T$
-Dove:
-  - $U$ e $V$ contengono i vettori principali;
-  - $\Sigma$ è una matrice diagonale dei valori singolari.
 
-- **Complessità**:  
-Il calcolo della decomposizione SVD ha una complessità di $O(m* n \cdot \min(m, n))$, dove:
-  - $m$ e $n$ sono le dimensioni della matrice $R$.  
-
-  Questo lo rende poco adatto per dataset di grandi dimensioni come il **Big**, dove la matrice è troppo grande per essere gestita efficientemente in memoria.
-
-
-<!-- MAGARI UTILE METTERLO NEI RISULTATI???? CONSIDERAZIONI FINALI???
-
-### Confronto tra approcci
-- **ALS** ha dimostrato di essere scalabile grazie alla sua implementazione iterativa distribuita su Spark, rendendolo adatto anche per il dataset **Big**.  
-- **PageRank** e **SVD**, pur essendo efficaci per dataset più piccoli, hanno fallito su dataset di grandi dimensioni a causa della complessità computazionale e della memoria richiesta. -->
 
 ## Architettura del sistema
+![Schema Cluster](INSERIRE_IMG)  
 
-[INSERIRE IMG SCHEMA CLUSTER]
-Il sistema viene implementato realizzando un cluster Hadoop con un nodo Master (Namenode) e due nodi Slave (Datanode), connessi tramite rete bridgiata. Il Master agisce anche come Resource Manager, mentre si utilizza HDFS per l'archiviazione distribuita del dataset MovieLens.
+Il sistema viene implementato realizzando un cluster Hadoop composto da:  
+- **Un nodo Master (Namenode)**: Responsabile della gestione del file system distribuito (HDFS) e delle risorse tramite YARN (Resource Manager).  
+- **Due nodi Worker (Datanode)**: Eseguono le operazioni distribuite su HDFS e gestiscono task assegnati dal Resource Manager.  
 
-L'applicazione inoltre sfrutta YARN per la gestione delle risorse e Spark per l'elaborazione distribuita, integrandosi con il Graph Database Neo4j per le analisi.
-[TODO]
+Il cluster comunica tramite una rete bridged, garantendo isolamento e semplicità di configurazione.  
+
+L'applicazione sfrutta:  
+1. **HDFS** per l'archiviazione distribuita dei dataset MovieLens.  
+2. **YARN** per la gestione delle risorse e l'esecuzione distribuita delle applicazioni.  
+3. **Apache Spark** per l'elaborazione distribuita di grandi volumi di dati.  
+4. **Neo4j** come database grafico per analisi avanzate sui dati relazionali. 
 
 
 ## Prerequisiti
@@ -176,11 +134,15 @@ semplificando l'implementazione e l'esecuzione dei servizi.
   tar -xvzf hadoop-3.2.4.tar.gz
   mv hadoop-3.2.4 ~/hadoop
   ```
+- Eseguire lo stesso procedimento per Spark.
 
 - Si è creato uno script `custom-env.sh` in cui sono state inserite tutte le variabili d'ambiente utili per Hadoop, Spark e Java.
 [RICONTROLLARE CHE SIA TIPO COSI':]
   ```bash
-  export HADOOP_HOME=~/hadoop
+  #!/bin/sh
+
+  #Hadoop Related Options
+  export HADOOP_HOME=/home/worker1/hadoop-3.2.4
   export HADOOP_INSTALL=$HADOOP_HOME
   export HADOOP_MAPRED_HOME=$HADOOP_HOME
   export HADOOP_COMMON_HOME=$HADOOP_HOME
@@ -188,22 +150,37 @@ semplificando l'implementazione e l'esecuzione dei servizi.
   export YARN_HOME=$HADOOP_HOME
   export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
   export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
-  export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
+  export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+
+  #Spark
+  export SPARK_HOME=/home/worker1/spark-3.5.4-bin-hadoop3
+  export PATH=$PATH:$SPARK_HOME/sbin:$SPARK_HOME/bin"
   ```
 
+- A questo punto si può già verificare il corretto funzionamento di Spark:
+  ```shell 
+  > spark-shell --version 
+  Welcome to
+        ____              __
+      / __/__  ___ _____/ /__
+      _\ \/ _ \/ _ `/ __/  '_/
+    /___/ .__/\_,_/_/ /_/\_\   version 3.5.3
+        /_/
+
+  Using Scala version 2.12.18, OpenJDK Client VM, 1.8.0_432
+  Branch HEAD
+  Compiled by user haejoon.lee on 2024-09-09T05:20:05Z
+  Revision 32232e9ed33bb16b93ad58cfde8b82e0f07c0970
+  Url https://github.com/apache/spark
+  Type --help for more information.
+  ```
 
 **4. Configurazione dei File di Hadoop**
-A questo punto per configurare un ambiente Hadoop è sufficiente modificare una serie di file di configurazione:
+A questo punto per configurare un ambiente Hadoop è sufficiente modificare una serie di file di configurazione, situati nella cartella `%HADOOP_HOME%\etc\hadoop`:
 - Nel file `hadoop-env.sh` va specificato il percorso di Java:
 
   ```bash
   nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
-  ```
-
-  Assicurarsi che la riga seguente punti al percorso corretto di Java:
-
-  ```bash
-  export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
   ```
 
 - Nel file `core-site.xml` aggiungere:
@@ -260,7 +237,7 @@ A questo punto per configurare un ambiente Hadoop è sufficiente modificare una 
     <value>org.apache.hadoop.mapred.ShuffleHandler</value>
   </property>
 </configuration>
-  ```
+  
 
 **5. Creazione delle directories**
 A questo punto creare le cartelle `namenode` e `datanode` nella cartella `data`:
@@ -282,6 +259,13 @@ hdfs namenode -format
 A questo punto verificare che l'istallazione sia andata a buon fine:
 ```shell
 > hadoop version
+Hadoop 3.3.6
+Source code repository https://github.com/apache/hadoop.git -r 1be78238728da9266a4f88195058f08fd012bf9c
+Compiled by ubuntu on 2023-06-18T08:22Z
+Compiled on platform linux-x86_64
+Compiled with protoc 3.7.1
+From source with checksum 5652179ad55f76cb287d9c633bb53bbd
+This command was run using /C:/Hadoop/hadoop-3.3.6/share/hadoop/common/hadoop-common-3.3.6.jar
 ```
 
 E per avviare i servizi Hadoop eseguire:
@@ -290,65 +274,28 @@ start-dfs.sh
 start-yarn.sh
 ```
 
-A questo punto il servizio è in esecuzione presso: `http://localhost:8088/`
+A questo punto il servizio è in esecuzione presso: 
+- YARN Resource Manager: `http://localhost:8088`
+- Hadoop Namenode: `http://localhost:9870`
 
+**8. Inserire memorizzare il dataset in HDFS**
 
+Creare la cartella `dataset` in HDFS per poi memorizzarvi i dataset di interesse:
+```shell
+hdfs dfs -mkdir /dataset
+hdfs dfs -put /ml-latest/ratings.csv /dataset/ratings.csv
+hdfs dfs -put /ml-latest/movies.csv /dataset/movies.csv
+hdfs dfs -ls /
+```
 
- 
-
-
-
-
-## Analisi
-L'analisi è stata condotta sui seguenti parametri:
-
-- **Tempo di esecuzione e memoria** su dataset Small e conseguenti **stime** per il dataset Big basate sui risultati ottenuti nello Small;
-- **RMSE** (Root Mean Squared Error) per il modello ALS, che ha dimostrato migliori performance rispetto agli altri approcci.
-<!--DA VEDERE SE VERAMENTE USIAMO RMSE PER ALS, PER ORA NO, CASOMAI TOGLIERE -->
-
-> Nota: Questa sezione sarà completata DOPO la raccolta dei dati.
-
-## Sviluppi futuri con Link Prediction
-
-Un'estensione interessante del progetto potrebbe essere rappresentata dall'implementazione della **Link Prediction** per predire nuovi collegamenti tra utenti e film non ancora valutati. Questo approccio consentirebbe di migliorare le raccomandazioni ottenute attraverso tecniche come PageRank. Sebbene non sia stato implementato/testato nel sistema attuale, sono state analizzate diverse metodologie per identificare quella più adatta al nostro contesto.  
-
-Tra le tecniche considerate, si è ritenuto che l'indice di **Adamic-Adar** fosse il più promettente per la sua efficacia nell'analisi di grafi bipartiti come il grafo user-movie. Questo metodo calcola la **similarità** tra due nodi di un grafo in base ai loro **vicini comuni**, attribuendo un peso maggiore ai vicini con un basso grado, considerati più significativi.  
-
-La formula per calcolare l'indice di Adamic-Adar tra due nodi $u$ e $v$ è:
-
-$$
-A(u, v) = \sum_{w \in N(u) \cap N(v)} \frac{1}{\log |N(w)|}
-$$
-
-Dove:
-- $N(u)$ è l'insieme dei vicini del nodo $u$.
-- $N(v)$ è l'insieme dei vicini del nodo $v$.
-- $N(w)$ è l'insieme dei vicini del nodo $w$ (nodo comune tra $u$ e $v$).
-- $|N(w)|$ rappresenta il grado del nodo $w$.
-
-L'uso diretto dell'indice di Adamic-Adar nel grafo bipartito user-movie non è però possibile. 
-Ciò è dovuto alla struttura del grafo bipartito che connette utenti a film, poiché non esistono **vicini comuni** tra un utente e un film che l'utente non ha ancora valutato. 
-Di conseguenza, l'indice di Adamic-Adar non può essere utilizzato per predire direttamente nuovi collegamenti tra un utente e un film.  
-
-Tuttavia, l'indice di Adamic-Adar potrebbe essere applicato alle **proiezioni del grafo bipartito**. In particolare:  
-- Nel grafo **user-user**, che connette utenti che hanno valutato gli stessi film;  
-- Nel grafo **movie-movie**, che collega film valutati dagli stessi utenti.  
-
-In queste proiezioni, la presenza di vicini comuni rende l'uso dell'indice di Adamic-Adar una soluzione valida e utile per migliorare le raccomandazioni, rilevando relazioni latenti tra utenti o tra film.
+**9. Spark submit**
 
 
 
 
-
-## LINK UTILI e TOPIC:
-
+## Riferimenti e link utili 
 
 
-
-### Datasets
-
-Netflix Prize Dataset (~ 2GB): https://www.kaggle.com/datasets/netflix-inc/netflix-prize-data
-MovieLens 100k movie reatings (~ 5MB): https://grouplens.org/datasets/movielens/100k/
 
 ### Filtering
 
@@ -404,3 +351,4 @@ nel senso che si cerca di prevedere la probabilità di una relazione tra due nod
 - Link Prediction: https://github.com/Cloudy1225/Awesome-Link-Prediction
 - Link Prediction for PageRank Fairness: https://github.com/ksemer/fairPRrec
 - Matrix Completion for Recommended Systems: https://chenzl23.github.io/assets/pdf/ReviewOnRS-KAIS2022.pdf
+- How to install Hadoop: https://phoenixnap.com/kb/install-hadoop-ubuntu
