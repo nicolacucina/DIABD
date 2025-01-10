@@ -14,8 +14,8 @@ Per raggiungere tale obiettivo sono state integrate diverse tecnologie:
 
 Inizialmente, l'intento era quello di utilizzare il **Netflix Prize Dataset** (~2 GB) [Netflix Dataset](https://www.kaggle.com/datasets/netflix-inc/netflix-prize-data), oggetto di una competizione tenutasi su larga scala. Tuttavia, per motivi di praticità e di testing iniziale, si è scelto di adottare il **MovieLens Dataset**, disponibile in due varianti:
 
-- **Small**: 100.000 valutazioni fatte a 9.000 film da parte di 600 utenti (~1 MB);
-- **Full**: circa 33.000.000 valutazioni fatte a 86.000 film da parte di 330.975 utenti (~28 GB).
+- **Small**: 100.000 valutazioni fatte a 9.000 film da parte di 600 utenti (~5 MB);
+- **Big**: circa 33.000.000 valutazioni fatte a 86.000 film da parte di 330.975 utenti (~1 GB).
 
 Entrambe le versioni sono reperibili sul sito ufficiale di GroupLens: [MovieLens Dataset](https://grouplens.org/datasets/movielens/latest/). Per il progetto si è inizialmente utilizzata la versione small per testare e ottimizzare l'implementazione, al fine di  scalare successivamente alla versione big. <!--Eh dove possibile però perché poi crasha-->
 
@@ -84,17 +84,12 @@ L'applicazione sfrutta:
 3. **Apache Spark** per l'elaborazione distribuita di grandi volumi di dati.  
 4. **Neo4j** come database grafico per analisi avanzate sui dati relazionali. 
 
-
 ## Prerequisiti
 In questa sezione sono elencati i prerequisiti software necessari per l'esecuzione del sistema:
 1. **Apache Hadoop 3.2.4**; [[hadoop](https://hadoop.apache.org/release/3.2.4.html)]
 2. **Apache Spark 3.5.4** [[spark](https://spark.apache.org/downloads.html)]
-3. **Java 8**;  [[java](https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html)]
+3. **Java 8**;
 4. **Neo4j 1.6.1**;
-
-Il programma di installazione di Java installerà automaticamente il jdk in C:\Program Files\Java\jdk1.8.0_351, mentre la destinazione JRE può essere modificata. 
-I file di Hadoop e Spark possono essere estratti in qualsiasi cartella, ma si consiglia di estrarli nella root del disco per evitare percorsi lunghi.
-
 
 ## Setup/Configurazione del Cluster
 
@@ -102,7 +97,7 @@ Partendo da un'immagine Ubuntu e usando tre macchine virtuali (da 16 GB di RAM e
 
 **1. Creazione di un Utente Dedicato per Hadoop**
 
-Per motivi di sicurezza, è consigliabile creare un utente separato per Hadoop:
+Per lavorare in maniera più comoda si utilizza un utente con i permessi da superutente
 
 ```bash
 sudo usermod -aG sudo master
@@ -110,19 +105,16 @@ sudo usermod -aG sudo master
 
 **2. Comunicazione fra le macchine tramite SSH**
  
-
 Hadoop utilizza SSH per la comunicazione tra i nodi. È quindi necessario configurare l'accesso SSH *Passwordless* per l'utente Hadoop. 
 Per semplificare la configurazione, tutti i dispositivi del cluster (nodo master e due nodi worker) utilizzano lo stesso nome utente (`master`), 
-la stessa password e una configurazione condivisa delle chiavi pubbliche.  
-Nonostante ciò, le tre macchine risultano comunque riconoscibili, come risulta nel file `/etc/hosts` presente in tutti i nodi:  
+la stessa password e sono configurati con la stessa chiave pubblica del master.  
+Nonostante ciò, le tre macchine risultano comunque distinte nella rete, come risulta nel file `/etc/hosts` presente in tutti i nodi:  
    ```text
    <IP_master>    master
    <IP_worker1>   worker1
    <IP_worker2>   worker2
    ```  
 
-Con questa configurazione, Hadoop sarà in grado di comunicare tra i nodi senza richiedere continuamente l'inserimento di password, 
-semplificando l'implementazione e l'esecuzione dei servizi.
 
 **3. Download e Installazione di Hadoop**
 
@@ -136,7 +128,7 @@ semplificando l'implementazione e l'esecuzione dei servizi.
 
   ```bash
   tar -xvzf hadoop-3.2.4.tar.gz
-  mv hadoop-3.2.4 ~/hadoop
+  mv hadoop-3.2.4 /home/<user>/
   ```
 - Eseguire lo stesso procedimento per Spark.
 
@@ -145,8 +137,8 @@ semplificando l'implementazione e l'esecuzione dei servizi.
   ```bash
   #!/bin/sh
 
-  #Hadoop Related Options
-  export HADOOP_HOME=/home/worker1/hadoop-3.2.4
+  #Hadoop
+  export HADOOP_HOME=/home/<user>/hadoop-3.2.4
   export HADOOP_INSTALL=$HADOOP_HOME
   export HADOOP_MAPRED_HOME=$HADOOP_HOME
   export HADOOP_COMMON_HOME=$HADOOP_HOME
@@ -157,9 +149,10 @@ semplificando l'implementazione e l'esecuzione dei servizi.
   export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
 
   #Spark
-  export SPARK_HOME=/home/worker1/spark-3.5.4-bin-hadoop3
+  export SPARK_HOME=/home/<user>/spark-3.5.4-bin-hadoop3
   export PATH=$PATH:$SPARK_HOME/sbin:$SPARK_HOME/bin"
   ```
+  
 
 - A questo punto si può già verificare il corretto funzionamento di Spark:
   ```shell 
@@ -180,11 +173,11 @@ semplificando l'implementazione e l'esecuzione dei servizi.
   ```
 
 **4. Configurazione dei File di Hadoop**
-A questo punto per configurare un ambiente Hadoop è sufficiente modificare una serie di file di configurazione, situati nella cartella `%HADOOP_HOME%\etc\hadoop`:
+A questo punto per configurare un ambiente Hadoop è sufficiente modificare una serie di file di configurazione, situati nella cartella `$HADOOP_HOME\etc\hadoop`:
 - Nel file `hadoop-env.sh` va specificato il percorso di Java:
 
   ```bash
-  nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+  export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
   ```
 
 - Nel file `core-site.xml` aggiungere:
@@ -198,7 +191,7 @@ A questo punto per configurare un ambiente Hadoop è sufficiente modificare una 
   </configuration>
   ```
 
-- Nel file `hdfs-site.xml`:
+- Nel file `hdfs-site.xml` del master:
 
   ```xml
   <configuration>
@@ -207,41 +200,42 @@ A questo punto per configurare un ambiente Hadoop è sufficiente modificare una 
       <value>1</value>
     </property>
     <property>
+      <name>dfs.namenode.rpc-address</name>
+      <value>master:9000</value>
+    </property>
+    <property>
       <name>dfs.namenode.name.dir</name>
-      <value>file:///C:/Hadoop/hadoop-3.2.4/data/namenode</value>
+      <value>/home/<user>/hadoop-3.2.4/data/namenode</value>
     </property>
     <property>
       <name>dfs.datanode.data.dir</name>
-      <value>file:///C:/Hadoop/hadoop-3.2.4/data/datanode</value>
+      <value>/home/<user>/hadoop-3.2.4/data/datanode</value>
     </property>
   </configuration>
   ```
 
-- Nel file `mapred-site.xml`:
+- Nel file `workers` del master aggiungere:
+
+```shell
+master
+worker1
+worker2
+```
+
+- Nel file `hdfs-site.xml` dei worker:
 
   ```xml
   <configuration>
     <property>
-      <name>mapreduce.framework.name</name>
-      <value>yarn</value>
-    </property>
+      <name>dfs.namenode.rpc-address</name>
+      <value>master:9000</value>
+    </property>  
+    <property>
+      <name>dfs.datanode.data.dir</name>
+      <value>/home/<user>/hadoop-3.2.4/datanode2-dir</value>
+  </property>
   </configuration>
   ```
-
-- Nel file `yarn-site.xml`:
-
-  ```xml
-  <configuration>
-  <property>
-    <name>yarn.nodemanager.aux-services</name>
-    <value>mapreduce_shuffle</value>
-  </property>
-  <property>
-    <name>yarn.nodemanager.auxservices.mapreduce.shuffle.class</name>  
-    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
-  </property>
-</configuration>
-  
 
 **5. Creazione delle directories**
 A questo punto creare le cartelle `namenode` e `datanode` nella cartella `data`:
@@ -263,13 +257,6 @@ hdfs namenode -format
 A questo punto verificare che l'istallazione sia andata a buon fine:
 ```shell
 > hadoop version
-Hadoop 3.3.6
-Source code repository https://github.com/apache/hadoop.git -r 1be78238728da9266a4f88195058f08fd012bf9c
-Compiled by ubuntu on 2023-06-18T08:22Z
-Compiled on platform linux-x86_64
-Compiled with protoc 3.7.1
-From source with checksum 5652179ad55f76cb287d9c633bb53bbd
-This command was run using /C:/Hadoop/hadoop-3.3.6/share/hadoop/common/hadoop-common-3.3.6.jar
 ```
 
 E per avviare i servizi Hadoop eseguire:
@@ -311,29 +298,24 @@ Ciò non è però strettamente necessario quando si lavora con notebook come Jup
 
 Hadoop e Spark richiedono una versione specifica di Python, che può differire dalla versione preinstallata nel sistema operativo Ubuntu. 
 Per evitare conflitti e garantire un ambiente isolato e sicuro, si è optato per la creazione di un ambiente virtuale Python su ogni nodo (Master e Worker).  
-
-La procedura seguita è stata la seguente:  
-
-- **Creazione dell'ambiente virtuale:**  
-  Per ogni nodo del cluster, si è creato un ambiente virtuale con Python:  
-  ```bash
-  python3 -m venv ~/test
-  ```
-
-- **Attivazione dell'ambiente virtuale:**  
-  L'ambiente virtuale è stato attivato prima di ogni configurazione:  
-  ```bash
-  source test/bin/activate
-  ```
-
-- **Creazione di un file `requirements.txt`:**  
-  Per garantire che tutte le dipendenze fossero identiche tra i nodi, è stato generato un file `requirements.txt` con tutte le librerie necessarie per l'esecuzione dei progetti Spark.
   
-  Ogni nodo ha installato le dipendenze specificate nel file:  
-  ```bash
-  pip install -r requirements.txt
-  ```
+```bash
+python3 -m venv /test
+source test/bin/activate
+pip install -r requirements.txt
+```
 
+**11. Configurazione di Neo4j**
+
+E' stata scaricata la versione Desktop di Neo4j per questioni di praticità
+
+```bash
+sudo chmod a+x neo4j-desktop-<version>.AppImage
+sudo usermod master:master neo4j-desktop-<version>.AppImage
+./neo4j-desktop-<version>.AppImagee --no-sandbox
+```
+
+All'interno di Neo4j è stato poi creato un DBMS locale con password "testtest" da utilizzare dentro ai notebook per la creazione di una sessione con il database.
 
 ## Riferimenti e link utili
 
