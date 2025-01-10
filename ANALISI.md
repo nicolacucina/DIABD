@@ -1,59 +1,4 @@
 # Analisi della complessità degli approcci usati
-Sono stati adottati tre approcci principali per il sistema di raccomandazione:
-
-## **Alternating Least Squares (ALS)**  
-### **Formula**: ALS minimizza la funzione di costo:
-$$\sum_{(u, i) \in D} (r_{ui} - \mathbf{x}_u^T \mathbf{y}_i)^2 + \lambda (\|\mathbf{x}_u\|^2 + \|\mathbf{y}_i\|^2)$$
-
-Dove $\mathbf{x}_u$ e $\mathbf{y}_i$ rappresentano i vettori utente e item, $\lambda$ è il termine di regolarizzazione.
-     
-### **Complessità**:  
-ALS alterna tra la risoluzione di due problemi di regressione lineare, ciascuno con una complessità di $O(k^2 m + k^3)$, dove:
-- $k$ è il numero di fattori latenti;
-- $m$ è il numero di righe nella matrice utente o film.  
-     
-Grazie all’implementazione distribuita di Spark, ALS è risultato scalabile anche con il dataset **Big**, completando l'addestramento in tempi ragionevoli.
-
-## **PageRank**  
-### **Formula**:  
-$$p_{i} = \frac{1-d}{n} + d \sum_{j \rightarrow i} \frac{p_{j}}{m_{j}}
-$$
-
-Dove:  
-- $d$ è il **fattore di damping**, con $0 < d < 1$, usato per gestire salti casuali;  
-- $n$ è il numero totale di nodi nel grafo;  
-- $L_{ij}$ rappresenta la connessione tra i nodi $i$ e $j$;  
-- $m_{j}$ è il numero di connessioni totali del nodo $j$.  
-
-Questo approccio consente di rappresentare anche il fatto che un utente  occasionalmente esplora film al di fuori delle proprie preferenze usuali.  
-
-  
-### **Complessità**:  
-
-1. **Proiezione del grafo bipartito**  
-La proiezione di un grafo bipartito su un set di nodi $U$ rispetto a un altro set $S$ comporta una complessità significativa. Secondo il paper di **Banerjee et al. (2017)** [1]:  
-   - **Complessità temporale**: $O(n_1^2 n_2)$, dove:
-     - $n_1 = |U|$, numero di nodi del set da proiettare;
-     - $n_2 = |S|$, numero di nodi del set opposto.  
-   - **Complessità spaziale**: $O(n_1^2)$, dato che viene creata una matrice di adiacenza di dimensione $n_1 \times n_1$.
-
-2. **Algoritmo PageRank**  
-   L'algoritmo iterativo di PageRank ha una complessità per iterazione di:
-   $O(E + V)$
-   Dove:  
-   - $E$ è il numero di archi (valutazioni);  
-   - $V$ è il numero di nodi (utenti e film).  
-   
-   Tuttavia, il numero di iterazioni necessarie per la convergenza può aumentare significativamente in grafi di grandi dimensioni.
-
-3. **Complessità combinata**  
-Combinando entrambe le operazioni:
-- Proiezione: $O(n_1^2 n_2)$;  
-- PageRank: $O(E + V)$ per iterazione,  
-
-    Si ha quindi che l costo complessivo diventa proibitivo per dataset di grandi dimensioni e grafi bipartiti densi ($E \sim O(n_1 \cdot n_2))$. Per garantire scalabilità, è necessario adottare approcci ottimizzati o tecniche di riduzione della dimensionalità. 
-
-
 
 ## **SVD**
 - **Formula**:  
@@ -73,17 +18,6 @@ Il calcolo della decomposizione SVD ha una complessità di $O(m* n \cdot \min(m,
 ### Confronto tra approcci
 - **ALS** ha dimostrato di essere scalabile grazie alla sua implementazione iterativa distribuita su Spark, rendendolo adatto anche per il dataset **Big**.  
 - **PageRank** e **SVD**, pur essendo efficaci per dataset più piccoli, hanno fallito su dataset di grandi dimensioni a causa della complessità computazionale e della memoria richiesta. -->
-
-## Analisi su Tempo e Memoria
-
-L'analisi è stata condotta sui seguenti parametri:
-
-- **Tempo di esecuzione e memoria** su dataset Small e conseguenti **stime** per il dataset Big basate sui risultati ottenuti nello Small;
-- **RMSE** (Root Mean Squared Error) per il modello ALS, che ha dimostrato migliori performance rispetto agli altri approcci.
-<!--DA VEDERE SE VERAMENTE USIAMO RMSE PER ALS, PER ORA NO, CASOMAI TOGLIERE -->
-
-> Nota: Questa sezione sarà completata DOPO la raccolta dei dati.
-
 
 
 # Sviluppi futuri 

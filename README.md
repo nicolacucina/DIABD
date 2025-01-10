@@ -1,6 +1,6 @@
 # Movie Recommendation System
 
-![Testo Alternativo](images/movie_rec_intro.jpg)
+<!-- ![Testo Alternativo](images/movie_rec_intro.jpg)> -->
 
 ## Introduzione
 Lo scopo di questo progetto è sviluppare un sistema di raccomandazione di film che offra suggerimenti personalizzati agli utenti, basandosi sulle loro preferenze riguardanti i film che hanno già visto e valutato.
@@ -46,8 +46,9 @@ Le caratteristiche principali del dataset di Netflix includono:
 
 Grazie all'operazione di *pivot* sui dati di MovieLens, è possibile generare una struttura dati analoga, mappando gli utenti e i film secondo una rappresentazione coerente con quella di Netflix, semplificando così le analisi comparative e l'estensione del sistema di raccomandazione.  
 
-## Implementazione/Approcci utilizzati
-Sono stati adottati tre approcci principali per il sistema di raccomandazione:
+## Approcci utilizzati (Implementazione?)
+Sono stati adottati tre approcci principali per il sistema di raccomandazione, ciascuno organizzato in cartelle separate per mantenere chiarezza e modularità. 
+Ogni cartella contiene un file `README.md` che descrive l'idea matematica alla base dell'approccio, insieme a un'analisi della complessità computazionale, del tempo di esecuzione e dell'utilizzo della memoria.  
 
 1. **Alternating Least Squares (ALS)**  
 ALS è un algoritmo di fattorizzazione delle matrici utilizzato per la raccomandazione collaborativa (*Collaborative Filtering*). 
@@ -65,10 +66,11 @@ Utilizzato per misurare l'importanza relativa dei nodi all'interno di un grafo b
 
 3. **SVD (Singular Value Decomposition)**    
 SVD scompone la matrice delle valutazioni per estrarre feature latenti che rappresentano correlazioni tra utenti e film.  
+Questa scomposizione consente di ridurre il rumore nei dati e identificare pattern latenti significativi, migliorando la capacità di raccomandazione.
 
 
 ## Architettura del sistema
-![Schema Cluster](INSERIRE_IMG)  
+![Schema Cluster](images/architettura.png)  
 
 Il sistema viene implementato realizzando un cluster Hadoop composto da:  
 - **Un nodo Master (Namenode)**: Responsabile della gestione del file system distribuito (HDFS) e delle risorse tramite YARN (Resource Manager).  
@@ -95,6 +97,8 @@ I file di Hadoop e Spark possono essere estratti in qualsiasi cartella, ma si co
 
 
 ## Setup/Configurazione del Cluster
+
+Partendo da un'immagine Ubuntu e usando tre macchine virtuali (da 16 GB di RAM e 4 core ciascuna) si è configurato il cluster come di seguito riportato.
 
 **1. Creazione di un Utente Dedicato per Hadoop**
 
@@ -301,66 +305,71 @@ spark-submit \
   my_spark_app.py
 ```
 
-Ciò non è però strettamente necessario quando si lavora con notebook come Jupyter, dal momento che la Spark Session può essere creata direttamente all'interno del codice, come è stato fatto in questo progetto. 
-Ad esempio:
-```python
-from pyspark.sql import SparkSession
+Ciò non è però strettamente necessario quando si lavora con notebook come Jupyter, dal momento che la Spark Session può essere creata direttamente all'interno di ogni notebook, come è stato fatto in questo progetto. 
 
-spark = SparkSession.builder \
-    .appName('Movie Recommendation') \
-    .master('yarn') \
-    .config('spark.driver.memory', '4g') \
-    .config('spark.executor.instances', '2') \
-    .config('spark.executor.memory', '3g') \
-    .config("spark.locality.wait.node", "0") \
-    .getOrCreate()
+**10. Creazione di un Ambiente Virtuale per Python**  
 
-# Verifica configurazioni
-spark.sparkContext.getConf().getAll()
-```
+Hadoop e Spark richiedono una versione specifica di Python, che può differire dalla versione preinstallata nel sistema operativo Ubuntu. 
+Per evitare conflitti e garantire un ambiente isolato e sicuro, si è optato per la creazione di un ambiente virtuale Python su ogni nodo (Master e Worker).  
+
+La procedura seguita è stata la seguente:  
+
+- **Creazione dell'ambiente virtuale:**  
+  Per ogni nodo del cluster, si è creato un ambiente virtuale con Python:  
+  ```bash
+  python3 -m venv ~/test
+  ```
+
+- **Attivazione dell'ambiente virtuale:**  
+  L'ambiente virtuale è stato attivato prima di ogni configurazione:  
+  ```bash
+  source test/bin/activate
+  ```
+
+- **Creazione di un file `requirements.txt`:**  
+  Per garantire che tutte le dipendenze fossero identiche tra i nodi, è stato generato un file `requirements.txt` con tutte le librerie necessarie per l'esecuzione dei progetti Spark.
+  
+  Ogni nodo ha installato le dipendenze specificate nel file:  
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 
-
-
-## Riferimenti e link utili 
-
-
+## Riferimenti e link utili
 
 ### Filtering
 
-- Collaborative Filtering
+#### Collaborative Filtering
+- **SVD / ALS / Matrix Factorization**
+  - [Movie Recommender Visualization](https://github.com/alicefortuni/MovieRecommenderVis/tree/master)
+  - [Netflix Prize Solution](https://pantelis.github.io/cs301/docs/common/lectures/recommenders/netflix/)
+  - [SVD Algorithm](https://builtin.com/articles/svd-algorithm)
+  - [Movie Recommender System](https://github.com/adinmg/movie_recommender_system) 
 
-- - SVD / ALS / Matrix Factorization (forse Collaborative Filtering da quello che leggo ma guardare meglio i calcoli)
-- - - https://github.com/alicefortuni/MovieRecommenderVis/tree/master
-- - - Netflix Prize Solution : https://pantelis.github.io/cs301/docs/common/lectures/recommenders/netflix/
-- - - https://builtin.com/articles/svd-algorithm
-- - - https://github.com/adinmg/movie_recommender_system  ---> forse molto utile per svd, collaborative filtering e vector based
+- **PageRank-based Filtering**
+  - [Simple Recommender System using PageRank](https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf)
+  - [PageRank Recommendation System](https://github.com/pranay-ar/PageRank-Recommendation-System/blob/main/src/main/scala/MovieLensPageRank.scala)
 
-- - PageRank-based Filtering
-- - - https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf
-- - - https://github.com/pranay-ar/PageRank-Recommendation-System/blob/main/src/main/scala/MovieLensPageRank.scala
+- **Link-Prediction Filtering**
+  - Prevede la probabilità di una relazione tra due nodi, come la valutazione di un film da parte di un utente. Può essere confrontato con SVD per la previsione delle valutazioni.
 
-- - Link-Prediction Filtering
-nel senso che si cerca di prevedere la probabilità di una relazione tra due nodi, per noi questa relazione è la valutazione di un film da parte di un utente, quindi se uso svd per prevedere la valutazione di un film da parte di un utente, posso usare link-prediction per fare la stessa cosa e confronto
+#### Content-based Filtering
+- [Content-based Movie Recommendation System](https://github.com/DATUMBRIGHT/content-based-movie-recommendation-system) 
 
-- Content-based Filtering
-- - - https://github.com/DATUMBRIGHT/content-based-movie-recommendation-system (sembra complesso ma completo come sistema di raccomandazione)
+#### Item-based Filtering
+- Calcolo della similarità tra gli item (film). 
+  - [Step-by-Step Guide to Building Content-based Filtering](https://www.stratascratch.com/blog/step-by-step-guide-to-building-content-based-filtering/)
+  - [Content-based Filtering](https://www.scaler.com/topics/machine-learning/content-based-filtering/)
 
-- - Item-based Filtering
-- - - Serve il calcolo della similarità tra gli item(movies), se non è presente nel dataset facciamo SVD?
-- - - https://www.stratascratch.com/blog/step-by-step-guide-to-building-content-based-filtering/
-- - - https://www.scaler.com/topics/machine-learning/content-based-filtering/
+#### Hybrid Filtering
 
-- Hybrid Filtering
+#### Vector-Based Recommendation Systems
+- [How to Create a Vector-Based Recommendation System](https://www.e2enetworks.com/blog/how-to-create-a-vector-based-recommendation-system)
+- [Vector-Based Movie Recommendation System](https://towardsdatascience.com/how-to-create-a-vector-based-movie-recommendation-system-b6d4f7582d66) con [repo GitHub](https://github.com/arditobryan/Projects/tree/master/20211126_movie_plot_transformers)
 
-- Vector-Based Recommendation Systems: 
-- - - https://www.e2enetworks.com/blog/how-to-create-a-vector-based-recommendation-system
-- - - https://towardsdatascience.com/how-to-create-a-vector-based-movie-recommendation-system-b6d4f7582d66 con repo github: https://github.com/arditobryan/Projects/tree/master/20211126_movie_plot_transformers
+#### K-means-based Filtering
 
-- K-means-based Filtering
-
-### Popular Ranking techniques
-
+### Popular Ranking Techniques
 - Popularity-based Ranking
 - KNN-based Ranking
 - Matrix Factorization-based Ranking
@@ -368,16 +377,15 @@ nel senso che si cerca di prevedere la probabilità di una relazione tra due nod
 - PageRank-based Ranking
 
 ### Links
-
-- Definition : https://spotintelligence.com/2024/07/26/ranking-algorithms/#What_are_the_Types_of_Ranking_Algorithms
-- Correlation-based Ranking : https://www.geeksforgeeks.org/python-implementation-of-movie-recommender-system/
-- Github Topic: https://github.com/topics/movie-recomendation-system
-- Machine Learning : https://github.com/ankitacoder3/Movie-Recommendation-System-MOVICO
-- Paper confronting different methods: https://pmc.ncbi.nlm.nih.gov/articles/PMC9269752/
-- Machine-Learning Collaborative Filtering: https://www.freecodecamp.org/news/how-to-build-a-movie-recommendation-system-based-on-collaborative-filtering/
-- Link Prediction : https://paperswithcode.com/task/link-prediction
-- Link Prediction Survey : https://link.springer.com/article/10.1007/s11227-023-05591-8
-- Link Prediction: https://github.com/Cloudy1225/Awesome-Link-Prediction
-- Link Prediction for PageRank Fairness: https://github.com/ksemer/fairPRrec
-- Matrix Completion for Recommended Systems: https://chenzl23.github.io/assets/pdf/ReviewOnRS-KAIS2022.pdf
-- How to install Hadoop: https://phoenixnap.com/kb/install-hadoop-ubuntu
+- [Definition of Ranking Algorithms](https://spotintelligence.com/2024/07/26/ranking-algorithms/#What_are_the_Types_of_Ranking_Algorithms)
+- [Correlation-based Ranking](https://www.geeksforgeeks.org/python-implementation-of-movie-recommender-system/)
+- [GitHub Topic: Movie Recommendation System](https://github.com/topics/movie-recomendation-system)
+- [Machine Learning: Movie Recommendation System](https://github.com/ankitacoder3/Movie-Recommendation-System-MOVICO)
+- [Paper Confronting Different Methods](https://pmc.ncbi.nlm.nih.gov/articles/PMC9269752/)
+- [Machine-Learning Collaborative Filtering](https://www.freecodecamp.org/news/how-to-build-a-movie-recommendation-system-based-on-collaborative-filtering/)
+- [Link Prediction](https://paperswithcode.com/task/link-prediction)
+- [Link Prediction Survey](https://link.springer.com/article/10.1007/s11227-023-05591-8)
+- [Awesome Link Prediction](https://github.com/Cloudy1225/Awesome-Link-Prediction)
+- [Link Prediction for PageRank Fairness](https://github.com/ksemer/fairPRrec)
+- [Matrix Completion for Recommended Systems](https://chenzl23.github.io/assets/pdf/ReviewOnRS-KAIS2022.pdf)
+- [How to Install Hadoop](https://phoenixnap.com/kb/install-hadoop-ubuntu)
