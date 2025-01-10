@@ -32,10 +32,10 @@ Sono state effettuate due tipologie di addestramento:
 ### **Osservazioni**  
 1. **Crescita quasi lineare**:  
    - Il tempo di training cresce circa linearmente con la dimensione del dataset, coerentemente con la complessità temporale di ALS, che è ~$O(k^2 m)$ (dove $m$ è il numero di dati).  
-   - Sebbene il dataset Large sia 100 volte più grande del dataset Small, il tempo di training senza Cross Validation è cresciuto di circa 10x, e con Cross Validation di circa 30x.  
+   - Sebbene il dataset *Large* sia 100 volte più grande del dataset *Small*, il tempo di training senza Cross Validation è cresciuto di circa 10x, e con Cross Validation di circa 30x.  
 
 2. **Effetto della Cross Validation**:  
-   - Con il dataset Small, come si si poteva aspettare, l'addestramento con Cross Validation richiede un incremento di 10x rispetto a quello senza CV.  
+   - Con il dataset *Small*, come si si poteva aspettare, l'addestramento con Cross Validation richiede un incremento di 10x rispetto a quello senza CV.  
    - Per il dataset Large, l'incremento è di quasi 20x.  
 
 3. **Prospettive future**:  

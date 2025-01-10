@@ -1,5 +1,13 @@
 
 # **PageRank**  
+ 
+Il problema viene modellato come un **grafo bipartito user-movie**, dove i nodi rappresentano **utenti** e **film**, mentre gli archi rappresentano i **ratings**, ponderati dai punteggi assegnati.  
+
+Tuttavia, per gli scopi di questo progetto **PageRank non può essere applicato direttamente** su un grafo bipartito, poiché calcola l'importanza dei nodi basandosi su connessioni tra nodi dello stesso tipo. 
+Perciò,  il grafo bipartito viene proiettato in un sottografo chiamato *movie-movie*, dove i nodi sono solamente i film, collegati da archi che indicano una **similarità**, derivata dagli utenti che hanno valutato entrambi.  
+
+Questa proiezione permette di usare **PageRank** per calcolare un ranking dei film che tenga conto della loro importanza all'interno del grafo.
+
 ## **Formula**:  
 $$p_{i} = \frac{1-d}{n} + d \sum_{j \rightarrow i} \frac{p_{j}}{m_{j}}
 $$
@@ -12,7 +20,7 @@ Dove:
 
 Questo approccio consente di rappresentare anche il fatto che un utente  occasionalmente esplora film al di fuori delle proprie preferenze usuali.  
 
-  
+
 ## **Complessità**:  
 
 1. **Proiezione del grafo bipartito**  
@@ -36,38 +44,37 @@ Combinando entrambe le operazioni:
 - Proiezione: $O(n_1^2 n_2)$;  
 - PageRank: $O(E + V)$ per iterazione,  
 
-    Si ha quindi che l costo complessivo diventa proibitivo per dataset di grandi dimensioni e grafi bipartiti densi ($E \sim O(n_1 \cdot n_2))$. Per garantire scalabilità, è necessario adottare approcci ottimizzati o tecniche di riduzione della dimensionalità. 
+    Si ha quindi che l costo complessivo diventa proibitivo per dataset di grandi dimensioni e grafi bipartiti densi ($E \sim n^2)$. Per garantire scalabilità, è necessario adottare approcci ottimizzati o tecniche di riduzione della dimensionalità. 
 
 
 
 ## **Osservazioni e limiti**  
-
-Per implementare PageRank nel contesto del sistema di raccomandazione, si è adottato un approccio basato su grafi, ma con alcune osservazioni:  
-
-### **Proiezione Movie-Movie**  
+ 
+### **Proiezione sui nodi che rappresentano i film**  
 1. **Proiezione in Python**:  
-   La proiezione del grafo bipartito (utenti-film) in un sottografo movie-movie è stata effettuata usando una libreria Python. Tuttavia:  
-   - Questa proiezione considera solamente i **vicini comuni** (utenti che hanno valutato entrambi i film) come misura di *similarità*. Questo approccio risulta piuttosto limitato in termini di semantica e qualità della misura.  
-   - **Threshold**: Non è stato applicato alcun filtro per rimuovere archi con pesi bassi. Ad esempio, si potrebbe assumere che un film popolare sia stato valutato da circa il 20% del dataset e tagliare tutti gli archi con pesi inferiori a questa soglia. La mancanza di tale filtro ha portato a un numero eccessivo di archi nel grafo risultante (13 milioni).  
+   La proiezione è stata effettuata usando la libreria Python *networkx*. Tuttavia questa proiezione conta solamente i **vicini comuni** (utenti che hanno valutato entrambi i film) come misura di *similarità*. Questo approccio risulta piuttosto limitato in termini di semantica e qualità della misura, infatti si ottengono 13 milioni di archi per i 9719 film.
+   Per risolvere tale problema si sarebbe dovuta  applicare una threshold per rimuovere archi con pesi bassi. 
+   Ad esempio, si potrebbe assumere che un film popolare sia stato valutato da circa il 20% del dataset e tagliare tutti gli archi con pesi inferiori a questa soglia. 
 
 2. **Proiezione in Spark**:  
-   La stessa libreria usata in Python è stata implementata in Spark. Tuttavia, in questo caso:  
-   - Spark applica automaticamente un **filtraggio massivo** (da 13 milioni di archi in Python a circa 160.000 in Spark), riducendo notevolmente la complessità del grafo.  
-   - Il filtraggio effettuato da Spark non è documentato o controllabile, ma risulta vantaggioso in termini di efficienza: con 160.000 archi, PageRank viene calcolato in **0.5 secondi**.  
+   In pyspark i grafi sono rappresentati tramite *graphframes*, e ciò costringe ad utilizzare i metodi di tale libreria, tra cui però non compare la proiezione di grafi biparititi. Pertanto si è cercato di replicare la funzione di *networkx* in pyspark. 
+   Tuttavia, nonostante la funzione scritta sia praticamente identica a quella di *networkx*, il risultato ottenuto è molto diverso: difatti si passa da 13 milioni di archi a circa 160.000, riducendo notevolmente la complessità del grafo, ma non risulta chiaro il motivo, anche data la lunga catena di conversione fra i vari stack software.
 
-### **Limitazioni di PageRank in Spark**  
-Nonostante il filtraggio effettuato da Spark renda il problema computazionalmente più gestibile, già utilizzando il dataset *Small* emergono alcune criticità:  
-1. **Differenze nei risultati**: La versione di PageRank implementata in Spark differisce da quella Python, producendo risultati non direttamente confrontabili.  
-2. **Mancanza di personalizzazione**: La versione di PageRank in Spark non supporta il **vettore di personalizzazione**, fondamentale per adattare il ranking agli interessi specifici di un utente. Questo limita l’efficacia semantica del modello.  
-3. **Problemi di convergenza**: PageRank in Spark non sembra riuscire a convergere, rendendo impossibile completare il calcolo.  
 
+#### **Limitazioni di PageRank in Spark**  
+Utilizzando il dataset *Small* emergono alcune criticità, legate al fatto che la versione di PageRank implementata in Spark differisce da quella Python. Infatti si sono ottenuti risultati diversi, dal momento che in Spark non è supportato il **vettore di personalizzazione**, fondamentale per adattare il ranking agli interessi specifici di un utente. 
+
+Inoltre l'algoritmo in Spark ha avuto difficoltà a convergere, rendendo impossibile completare il calcolo.  
 A causa di queste limitazioni, l’ analisi dei risultati è stata effettuata utilizzando **solo** la versione Python.  
 
-### **Analisi dei Tempi di Calcolo**  
-| **Metodo**     | **Numero di Archi** | **Tempo per Prediction** |
-|-----------------|---------------------|--------------------------|
-| Python  | ~13.000.000         | 15 s                     |
-| Spark     | ~160.000            | 0.5 s                    |  
+#### **Analisi dei Tempi di Calcolo**  
+
+- **Dataset Small**
+
+    | **Metodo**     | **Numero di Archi** | **Tempo per Prediction** |
+    |-----------------|---------------------|--------------------------|
+    | Python  | ~13.000.000         | 15 s                     |
+    | Spark     | ~160.000            | 0.5 s                    |  
 
 - **Dataset Big**:  
 Per quanto riguarda l'analisi del dataset *Big*, esso si compone di **86.000 nodi** e **8 milioni di archi**. Dunque, se tale problema venisse affrontato con un approccio di *forte filtraggio* simile a quello di Spark (ad esempio limitando ad esempio a 100 il n° di archi per ogni film), sarebbe possibile stimare i tempi di calcolo anche per tale dataset nel seguente modo:  
@@ -76,25 +83,92 @@ Per quanto riguarda l'analisi del dataset *Big*, esso si compone di **86.000 nod
   - Avendo in questo caso ~300.000 utenti, il calcolo complessivo richiederebbe **1.300 ore** su un cluster simile a quello usato.  
   - Questo dimostra che il problema è potenzialmente affrontabile in **tempi ragionevoli** per dataset di grandi dimensioni.  
 
-### **Confronto con la Proiezione User-User**  
-Un approccio alternativo basato su una proiezione **user-user** (dove si individuano gli utenti più simili tra loro sulla base dei film più visti) presenta vantaggi e limiti:  
+### **Confronto con la proiezione sui nodi che rappresentano gli utenti**  
+Un approccio alternativo mira a creare raccomandazioni sfruttando la *similarità* tra gli utenti, sulla base dei film da loro visti.
+Questo metodo individua i **10 utenti** più **simili** all'utente target e, attraverso le loro preferenze, gli consiglia dei film che non ha ancora visto. 
+Ciò è possibile calcolando *PageRank* sul grafo proiettato **user-user**.
+
+Esso presenta vantaggi e limiti:  
 - **Dataset Small**: Avendo 610 utenti e ~160.000 archi, il grafo user-user è *quasi completo* (essendo il n° di archi possibili ~180.000), ma rimane sufficientemente piccolo da rendere il calcolo di PageRank processabile in tempi praticamente immediati.  
 - **Dataset Big**: Tuttavia con 300.000 utenti il problema diventa più complesso e la definizione di una metrica di similarità adeguata per la proiezione diventa fondamentale.  
 
-#### **Strategia Finale**  
-Una versione precedente prevedeva l’uso di PageRank due volte:  
-1. Per individuare i 10 utenti **più simili** a un dato utente.  
-2. Per classificare sulla base del rating **i film** visti da questi 10 utenti simili al fine di consigliare all'utente quelli che fra questi egli non ha già visto.  
+Inizialmente si era pensato di usare PageRank due volte: la prima per individuare i 10 utenti **più simili** a un dato utente, mentre la seconda per classificare i film visti da tali utenti sulla base del rating, per consigliare all'utente quelli che fra questi non ha già visto.   Tuttavia, a causa delle performance descritte in precedenza, calcolare PageRank per due volte non era computazionalmente gestibile.  
 
-Tuttavia, a causa delle performance descritte, questa soluzione non era gestibile.  
+Pertanto, si è scelto di adottare un approccio più semplice che prevede una **singola** esecuzione di tale algoritmo, appunto per individuare i 10 utenti più simili al target.
+La differenza è che a questo punto, tra i film a cui questi utenti hanno assegnato i punteggi più alti, ne vengono selezionati 10 in totale (uno per ogni utente simile) per creare l'elenco delle raccomandazioni per l'utente target, escludendo i film già visti.
+Tale approccio ha migliorato significativamente l’efficienza senza compromettere la qualità delle raccomandazioni.  
 
-**Soluzione adottata**:  
-- Si sono individuati i 10 utenti più simili con una singola esecuzione di PageRank.
-- Tra i film a cui questi utenti hanno assegnato i punteggi più alti, ne vengono selezionati 10 in totale (uno per ogni utente simile) per generare l'elenco delle 10 raccomandazioni per l'utente target, escludendo i film già visti.
-- Questo approccio ha migliorato significativamente l’efficienza senza compromettere la qualità delle raccomandazioni.  
+## **Analisi su Tempo e Memoria** 
 
 
-## **Link Prediction**
+
+### **Dataset Small**  
+
+Per il dataset *Small*, si sono misurati i tempi di esecuzione e la memoria utilizzata per ogni operazione fondamentale nel processo di raccomandazione, confrontando i due approcci basati su PageRank:  
+1. **Proiezione su movie-movie**  
+2. **Proiezione su user-user**  
+
+Di seguito vengono riportati i risultati ottenuti:
+
+| **Operazione**                          | **Tempo** | **Memoria**  | **Nodi**       | **Archi**       |
+|-----------------------------------------|-----------|--------------|----------------|-----------------|
+| Creazione grafo bipartito (user-movie)  | 4 s       | 6 MB         | 610 (user), 9719 (movie) | 100.000         |
+| Creazione grafo proiettato (movie-movie)| 150 s     | 700 MB       | 9719 (movie)   | 13.154.589      |
+| Creazione grafo proiettato (user-user)  | 5 s       | 8.7 MB       | 610 (user)     | 164.054         |
+| PageRank su grafo movie-movie (1 utente)| 60 s      | -            | 9719 (movie)   | 13.154.589      |
+| PageRank su grafo user-user (1 utente) + Raccomandazione | 0.5 s     | -            | 610 (user)     | 164.054         |
+| **PageRank complessivo (movie-movie)**  | 36.600 s  | -            | 9719 (movie)   | 13.154.589      |
+| **PageRank complessivo (user-user)**    | ~5 min    | -            | 610 (user)     | 164.054         |
+
+
+---
+
+### **Confronto: Proiezione movie-movie vs user-user**
+
+La proiezione su **movie-movie** genera un grafo estremamente denso con **13.154.589 archi**, a fronte dei soli **164.054 archi** del grafo proiettato user-user. Questo comporta:  
+- un **aumento della memoria**: da 8.7 MB (user-user) a 700 MB (movie-movie).  
+- Tempi di calcolo significativamente più alti, dato che PageRank sul grafo movie-movie richiede **36.600 secondi** per tutti gli utenti, contro **5 minuti** nel caso del grafo user-user.  
+
+---
+
+### **Dataset Big**
+
+Per **stimare** i tempi e l'occupazione in memoria nel caso del dataset *Big*, si deve tener conto dell'aumento delle seguenti dimensioni rispetto allo *Small*:  
+- **Utenti**: da 610 a **330.000** (fattore di crescita: ~500x).  
+- **Film**: da 9719 a **86.000** (fattore di crescita: ~10x).  
+- **Relazioni**: da 100.000 a **33 milioni** (fattore di crescita: ~100x).  
+
+
+1. **Grafo bipartito user-movie**  
+   - **Tempo stimato**: ~2000 s (ipotizzando crescita lineare rispetto al numero di relazioni).  
+   - **Memoria stimata**: ~600 MB.  
+
+2. **Grafo proiettato movie-movie**  
+   - **Tempo stimato**: ~15 ore (150 s x 100).  
+   - **Memoria stimata**: ~70 GB.  
+
+3. **PageRank su grafo movie-movie (per tutti gli utenti)**  
+   - **Tempo stimato**: ~500 giorni (36.600 s x 500).  
+
+4. **Grafo proiettato user-user**  
+   - **Tempo stimato**: ~25 min (5 s x 500).  
+   - **Memoria stimata**: ~4 GB.  
+
+5. **PageRank su grafo user-user (per tutti gli utenti)**  
+   - **Tempo stimato**: ~42 ore (5 min x 500).  
+
+---
+
+### **Osservazioni**  
+L'approccio **user-user** è significativamente più scalabile, sia in termini di memoria che di tempo di esecuzione, rispetto all'approccio **movie-movie**. 
+Inoltre il grafo user-user rimane processabile con risorse ragionevoli anche per dataset grandi, grazie alla sua struttura molto meno densa.  
+Il grafo movie-movie risulta impraticabile per dataset Big senza tecniche di riduzione della dimensionalità (ad esempio, thresholding sugli archi).  
+
+
+
+
+
+## **Sviluppi futuri: Link Prediction**
 
 Un'estensione interessante del progetto potrebbe essere rappresentata dall'implementazione della **Link Prediction** per predire nuovi collegamenti tra utenti e film non ancora valutati. Questo approccio consentirebbe di migliorare le raccomandazioni ottenute attraverso tecniche come PageRank. Sebbene non sia stato implementato/testato nel sistema attuale, sono state analizzate diverse metodologie per identificare quella più adatta al nostro contesto.  
 
@@ -123,21 +197,6 @@ Tuttavia, l'indice di Adamic-Adar potrebbe essere applicato alle **proiezioni de
 In queste proiezioni, la presenza di vicini comuni rende l'uso dell'indice di Adamic-Adar una soluzione valida e utile per migliorare le raccomandazioni, rilevando relazioni latenti tra utenti o tra film.
 
 
-## Consigli sulla base di utenti simili
-
-Si è anche valutata la possibilità di integrare un approccio basato sulla *similarità* tra utenti, al fine di aumentare la rilevanza delle raccomandazioni. 
-Questo metodo mira a individuare i **10 utenti** più **simili** all'utente target e, attraverso le loro preferenze, raccomandare film che il target non ha ancora visto. Ciò è possibile sfruttando l'algoritmo *PageRank personalizzato* sul grafo proiettato **user-user**: per il nostro utente target, che evidenzia i 10 utenti più simili  a lui.
-
-Una volta ottenuti i 10 utenti più simili, il sistema può costruire un **preference vector** per l'utente target, considerando esclusivamente i film valutati da questi utenti simili. Successivamente, si esegue un PageRank sul grafo **movie-movie**, utilizzando il preference vector come punto di personalizzazione, per calcolare un ranking dei film potenzialmente interessanti. Infine fra questi film vengono esclusi quelli già visti dall'utente target, e come raccomandazioni finali si selezionano 10 film con il punteggio più alto tra i rimanenti.
-
-Inoltre l'approccio consente di incorporare una *penalità* per la popolarità dei film, riducendo il bias verso contenuti estremamente popolari.
-
-Tuttavia, questo approccio è stato escluso dalla versione finale del progetto per via della complessità computazionale che avrebbe comportato su dataset di grandi dimensioni. La necessità di:
-1. **Proiettare e calcolare PageRank** sia sul grafo **user-user** sia sul grafo **movie-movie**;
-2. **Gestire la penalizzazione per la popolarità** e la normalizzazione dei punteggi;
-3. **Iterare il processo per ogni utente target e per ogni suo utente simile**;
-
-avrebbe potuto portare a una complessità computazionale elevata, specialmente considerando grandi moli di dati reali.
 
 
 
