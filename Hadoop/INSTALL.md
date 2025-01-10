@@ -224,3 +224,4 @@ hdfs dfs -put C:\Users\Bans\Desktop\DIABD\DIABD\ml-latest\ratings.csv /test/rati
 hdfs dfs -put C:\Users\Bans\Desktop\DIABD\DIABD\ml-latest\movies.csv /test/moviesBig.csv
 hdfs dfs -ls /
 ```
+

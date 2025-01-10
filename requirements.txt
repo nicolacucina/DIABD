@@ -1,0 +1,8 @@
+pandas 
+pyspark
+numpy
+scipy
+scikit-learn
+findspark
+
+
