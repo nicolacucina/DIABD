@@ -5,7 +5,7 @@ $$\sum_{(u, i) \in D} (r_{ui} - \mathbf{x}_u^T \mathbf{y}_i)^2 + \lambda (\|\mat
 
 Dove $\mathbf{x}_u$ e $\mathbf{y}_i$ rappresentano i vettori utente e item, $\lambda$ è il termine di regolarizzazione.
 
-Una volta calcolati, i vettori vengono utilizzati per ricostruire la matrice _user-movies_ dove avremo stimato le potenziali ratings di ogni utente per ogni film. A partire da questa, le raccomandazioni sono scelte come le rating previste più alte tra i film non ancora visti.
+Una volta calcolati, i vettori vengono utilizzati per ricostruire la matrice _user-movies_ dove verrano stimate le potenziali ratings di ogni utente per ogni film. A partire da questa, le raccomandazioni sono scelte come le rating previste più alte tra i film non ancora visti.
      
 ### **Complessità**:  
 ALS alterna tra la risoluzione di due problemi di regressione lineare, ciascuno con una complessità di $O(k^2 m + k^3)$, dove:

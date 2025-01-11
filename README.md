@@ -44,8 +44,6 @@ Le caratteristiche principali del dataset di Netflix includono:
 - CustomerID che vanno da 1 a 2.649.429, con alcune lacune nei numeri;  
 - Un totale di 480.189 utenti attivi.  
 
-Grazie all'operazione di *pivot* sui dati di MovieLens, è possibile generare una struttura dati analoga, mappando gli utenti e i film secondo una rappresentazione coerente con quella di Netflix, semplificando così le analisi comparative e l'estensione del sistema di raccomandazione.  
-
 ## Approcci utilizzati
 Sono stati adottati tre approcci principali per il sistema di raccomandazione, ciascuno organizzato in cartelle separate per mantenere chiarezza e modularità. 
 Ogni cartella contiene un file `README.md` che descrive l'idea matematica alla base dell'approccio, insieme a un'analisi della complessità computazionale, del tempo di esecuzione e dell'utilizzo della memoria.  
@@ -55,18 +53,12 @@ ALS è un algoritmo di fattorizzazione delle matrici utilizzato per la raccomand
 La tecnica suddivide la matrice delle valutazioni in due matrici più piccole (utenti e film), riducendo le dimensioni e preservando le relazioni latenti.
    
 2. **PageRank**  
-Utilizzato per misurare l'importanza relativa dei nodi all'interno di un grafo bipartito (utenti-film). Dopo la conversione dei dati in grafi con la libreria *GraphFrames*:
-   - Gli archi rappresentano le valutazioni (con peso derivato dal rating).
-   - PageRank classifica film e utenti in base alla loro influenza. <!--NON CREDO SIA PROPRIO VERO, RIVEDI A MENTE LUCIDA--> 
-
-    Il metodo si basa su un modello iterativo che tiene conto delle connessioni tra i nodi.
-    Questo approccio consente di rappresentare anche il fatto che un utente  occasionalmente esplora film al di fuori delle proprie preferenze usuali.  
-
+Utilizzato per misurare l'importanza relativa dei nodi all'interno di un grafo, è stato sfruttato per cercare i film migliori da consigliare ad un utente :
 
 
 3. **SVD (Singular Value Decomposition)**    
 SVD scompone la matrice delle valutazioni per estrarre feature latenti che rappresentano correlazioni tra utenti e film.  
-Questa scomposizione consente di ridurre il rumore nei dati e identificare pattern latenti significativi, migliorando la capacità di raccomandazione.
+Questa decomposizione consente di ridurre il rumore nei dati e identificare pattern latenti significativi, migliorando la capacità di raccomandazione.
 
 
 ## Architettura del sistema
@@ -75,8 +67,6 @@ Questa scomposizione consente di ridurre il rumore nei dati e identificare patte
 Il sistema viene implementato realizzando un cluster Hadoop composto da:  
 - **Un nodo Master (Namenode)**: Responsabile della gestione del file system distribuito (HDFS) e delle risorse tramite YARN (Resource Manager).  
 - **Due nodi Worker (Datanode)**: Eseguono le operazioni distribuite su HDFS e gestiscono task assegnati dal Resource Manager.  
-
-Il cluster comunica tramite una rete bridged, garantendo isolamento e semplicità di configurazione.  
 
 L'applicazione sfrutta:  
 1. **HDFS** per l'archiviazione distribuita dei dataset MovieLens.  
@@ -255,8 +245,8 @@ hdfs namenode -format
 **7. Avvio del Cluster Hadoop**
 
 A questo punto verificare che l'istallazione sia andata a buon fine:
-```shell
-> hadoop version
+```bash
+hadoop version
 ```
 
 E per avviare i servizi Hadoop eseguire:
@@ -265,7 +255,7 @@ start-dfs.sh
 start-yarn.sh
 ```
 
-A questo punto il servizio è in esecuzione presso: 
+A questo punto il servizio è in esecuzione e monitorabile presso: 
 - YARN Resource Manager: `http://master:8088`
 - Hadoop Namenode: `http://localhost:9870`
 
@@ -317,6 +307,10 @@ sudo usermod master:master neo4j-desktop-<version>.AppImage
 
 All'interno di Neo4j è stato poi creato un DBMS locale con password "testtest" da utilizzare dentro ai notebook per la creazione di una sessione con il database.
 
+Al fine di visualizzare tutti i film raccomandati dai vari algoritmi, in neo4j è possibile farsi restituire un grafo che collega l'utente scelto con tutti i diversi consigliati
+
+![Grafo utente](images/graph.png)  
+
 ## Riferimenti e link utili
 
 ### Filtering
@@ -332,8 +326,6 @@ All'interno di Neo4j è stato poi creato un DBMS locale con password "testtest" 
   - [Simple Recommender System using PageRank](https://medium.com/eni-digitalks/a-simple-recommender-system-using-pagerank-4a63071c8cbf)
   - [PageRank Recommendation System](https://github.com/pranay-ar/PageRank-Recommendation-System/blob/main/src/main/scala/MovieLensPageRank.scala)
 
-- **Link-Prediction Filtering**
-  - Prevede la probabilità di una relazione tra due nodi, come la valutazione di un film da parte di un utente. Può essere confrontato con SVD per la previsione delle valutazioni.
 
 #### Content-based Filtering
 - [Content-based Movie Recommendation System](https://github.com/DATUMBRIGHT/content-based-movie-recommendation-system) 
