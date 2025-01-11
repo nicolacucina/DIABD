@@ -46,7 +46,7 @@ Le caratteristiche principali del dataset di Netflix includono:
 
 Grazie all'operazione di *pivot* sui dati di MovieLens, è possibile generare una struttura dati analoga, mappando gli utenti e i film secondo una rappresentazione coerente con quella di Netflix, semplificando così le analisi comparative e l'estensione del sistema di raccomandazione.  
 
-## Approcci utilizzati (Implementazione?)
+## Approcci utilizzati
 Sono stati adottati tre approcci principali per il sistema di raccomandazione, ciascuno organizzato in cartelle separate per mantenere chiarezza e modularità. 
 Ogni cartella contiene un file `README.md` che descrive l'idea matematica alla base dell'approccio, insieme a un'analisi della complessità computazionale, del tempo di esecuzione e dell'utilizzo della memoria.  
 
@@ -91,7 +91,7 @@ In questa sezione sono elencati i prerequisiti software necessari per l'esecuzio
 3. **Java 8**;
 4. **Neo4j 1.6.1**;
 
-## Setup/Configurazione del Cluster
+## Configurazione del Cluster
 
 Partendo da un'immagine Ubuntu e usando tre macchine virtuali (da 16 GB di RAM e 4 core ciascuna) si è configurato il cluster come di seguito riportato.
 
